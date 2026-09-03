@@ -28,16 +28,18 @@ class MainActivity : Activity() {
             ): Boolean {
                 if (url == null) return false
 
-                return if (
-                    url.startsWith("whatsapp:") ||
-                    url.startsWith("tel:") ||
-                    url.startsWith("mailto:")
-                ) {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                    true
-                } else {
-                    false
-                }
+          return if (
+    url.startsWith("whatsapp:") ||
+    url.startsWith("tel:") ||
+    url.startsWith("mailto:") ||
+    url.endsWith(".vcf", ignoreCase = true) ||
+    url.contains(".vcf?", ignoreCase = true)
+) {
+    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    true
+} else {
+    false
+          }      
             }
         }
 
