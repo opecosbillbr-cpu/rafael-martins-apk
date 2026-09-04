@@ -25,10 +25,38 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      - name: Gerar APK
-        run: gradle assembleDebug
+      - name: Restaurar chave de assinatura
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > release.jks
+
+      - name: Gerar APK Release
+        run: gradle assembleRelease
+
+      - name: Assinar APK
+        env:
+          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+
+          "$BUILD_TOOLS/zipalign" -v -p 4 \
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app-release-aligned.apk
+
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks release.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KS_PASS \
+            --key-pass env:KS_PASS \
+            --out Rafael-Martins.apk \
+            app-release-aligned.apk
+
+          "$BUILD_TOOLS/apksigner" verify --verbose Rafael-Martins.apk
+
       - name: Salvar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rafael-Martins-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Rafael-Martins-APK-Release
+          path: Rafael-Martins.apk
